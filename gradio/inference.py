@@ -66,7 +66,7 @@ model = prepare_model_for_kbit_training(
 
 print("Parameter Number: " + str(sum(p.numel() for p in model.parameters() if p.requires_grad)))
 
-checkpoint = torch.load(INFERENCE_WEIGHTS_PATH, map_location=torch.device(device))
+checkpoint = torch.load(INFERENCE_WEIGHTS_PATH, map_location='cpu')  # load on CPU to avoid unified-memory spike on MPS
 model.load_state_dict(checkpoint['model'])
 model = model.to(device)
 model.eval()
@@ -221,7 +221,7 @@ def inference_patch(period, composer, instrumentation):
         with torch.inference_mode():
             
             while True:
-                with torch.autocast(device_type='cuda', dtype=torch.float16):
+                with torch.autocast(device_type=device.type, dtype=torch.float16):
                     predicted_patch = model.generate(input_patches.unsqueeze(0),
                                                     top_k=TOP_K,
                                                     top_p=TOP_P,
