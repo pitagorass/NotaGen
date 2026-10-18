@@ -185,12 +185,15 @@ def rest_unreduce(abc_lines):
     return unreduced_lines
 
 
-def inference_patch(period, composer, instrumentation):
+def inference_patch(period, composer, instrumentation, prefix_lines=None):
 
     prompt_lines=[
     '%' + period + '\n',
     '%' + composer + '\n',
     '%' + instrumentation + '\n']
+    # prefix conditioning: byte-exact score opening (X:1 ... K:) the model continues from
+    if prefix_lines:
+        prompt_lines += [line if line.endswith('\n') else line + '\n' for line in prefix_lines]
 
     while True:
 
@@ -203,7 +206,8 @@ def inference_patch(period, composer, instrumentation):
         prompt_patches = patchilizer.patchilize_metadata(prompt_lines)
         byte_list = list(''.join(prompt_lines))
         context_tunebody_byte_list = []
-        metadata_byte_list = []
+        # seed with the prefix so long-piece re-encoding (stream window) keeps our conditioning
+        metadata_byte_list = list(''.join(prefix_lines)) if prefix_lines else []
 
         print(''.join(byte_list), end='')
 
